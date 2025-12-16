@@ -36,6 +36,7 @@ func main() {
 				Description: jsii.String("Shared network infrastructure for " + envName),
 			},
 			Environment: envName,
+			Config:      cfg,
 		})
 
 		// Shared Data stack (Aurora, S3) - depends on network

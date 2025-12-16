@@ -52,18 +52,20 @@ func NewDataStack(scope constructs.Construct, id string, props *DataStackProps) 
 	)
 
 	// Create Aurora PostgreSQL cluster
+	dbInstanceType := awsec2.NewInstanceType(jsii.String(props.Config.DBInstanceClass))
+
 	cluster := awsrds.NewDatabaseCluster(stack, jsii.String("AuroraCluster"), &awsrds.DatabaseClusterProps{
 		Engine: awsrds.DatabaseClusterEngine_AuroraPostgres(&awsrds.AuroraPostgresClusterEngineProps{
 			Version: awsrds.AuroraPostgresEngineVersion_VER_16_4(),
 		}),
 		Credentials:         awsrds.Credentials_FromGeneratedSecret(jsii.String("postgres"), nil),
-		DefaultDatabaseName: jsii.String("django"),
+		DefaultDatabaseName: jsii.String("app"),
 		Writer: awsrds.ClusterInstance_Provisioned(jsii.String("Writer"), &awsrds.ProvisionedClusterInstanceProps{
-			InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_R6G, awsec2.InstanceSize_LARGE),
+			InstanceType: dbInstanceType,
 		}),
 		Readers: &[]awsrds.IClusterInstance{
 			awsrds.ClusterInstance_Provisioned(jsii.String("Reader"), &awsrds.ProvisionedClusterInstanceProps{
-				InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_R6G, awsec2.InstanceSize_LARGE),
+				InstanceType: dbInstanceType,
 			}),
 		},
 		Vpc: props.Vpc,

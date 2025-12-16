@@ -8,6 +8,7 @@ type EnvironmentConfig struct {
 	MinCount        float64
 	MaxCount        float64
 	DBInstanceClass string
+	NatGateways     float64
 }
 
 // Environments contains the configuration for all environments
@@ -20,6 +21,7 @@ var Environments = map[string]EnvironmentConfig{
 		MinCount:        2,
 		MaxCount:        10,
 		DBInstanceClass: "r6g.large",
+		NatGateways:     2,
 	},
 	"sandbox": {
 		CPU:             1024,
@@ -28,6 +30,7 @@ var Environments = map[string]EnvironmentConfig{
 		MinCount:        1,
 		MaxCount:        5,
 		DBInstanceClass: "r6g.medium",
+		NatGateways:     2,
 	},
 	"demo": {
 		CPU:             512,
@@ -36,6 +39,7 @@ var Environments = map[string]EnvironmentConfig{
 		MinCount:        1,
 		MaxCount:        2,
 		DBInstanceClass: "r6g.medium",
+		NatGateways:     1,
 	},
 	"uat": {
 		CPU:             256,
@@ -44,5 +48,6 @@ var Environments = map[string]EnvironmentConfig{
 		MinCount:        1,
 		MaxCount:        2,
 		DBInstanceClass: "t3.small",
+		NatGateways:     1,
 	},
 }

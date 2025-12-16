@@ -1,6 +1,8 @@
 package stacks
 
 import (
+	"infra/config"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -11,6 +13,7 @@ import (
 type NetworkStackProps struct {
 	awscdk.StackProps
 	Environment string
+	Config      config.EnvironmentConfig
 }
 
 // NetworkStackOutputs contains the outputs from the network stack
@@ -30,7 +33,7 @@ func NewNetworkStack(scope constructs.Construct, id string, props *NetworkStackP
 	// Create VPC with public and private subnets across 2 AZs
 	vpc := awsec2.NewVpc(stack, jsii.String("Vpc"), &awsec2.VpcProps{
 		MaxAzs:      jsii.Number(2),
-		NatGateways: jsii.Number(2), // One per AZ for high availability
+		NatGateways: jsii.Number(props.Config.NatGateways),
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
 			{
 				Name:       jsii.String("Public"),
