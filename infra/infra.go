@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	djangoapi "infra/apps/django-api/stacks"
+	api "infra/apps/api/stacks"
 	"infra/config"
 	shared "infra/shared/stacks"
 
@@ -49,11 +49,11 @@ func main() {
 			Config:      cfg,
 		})
 
-		// Django API App stack (ECS, ALB)
-		djangoapi.NewServiceStack(app, envName+"-app-django-api", &djangoapi.ServiceStackProps{
+		// API App stack (ECS, ALB)
+		api.NewServiceStack(app, envName+"-app-api", &api.ServiceStackProps{
 			StackProps: awscdk.StackProps{
 				Env:         primaryEnv,
-				Description: jsii.String("Django API service for " + envName),
+				Description: jsii.String("API service for " + envName),
 			},
 			Environment: envName,
 			Vpc:         network.Vpc,

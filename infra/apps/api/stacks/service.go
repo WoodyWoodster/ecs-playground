@@ -17,7 +17,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// ServiceStackProps defines the properties for the Django service stack
+// ServiceStackProps defines the properties for the API service stack
 type ServiceStackProps struct {
 	awscdk.StackProps
 	Environment string
@@ -35,7 +35,7 @@ type ServiceStackOutputs struct {
 	Service    awsecspatterns.ApplicationLoadBalancedFargateService
 }
 
-// NewServiceStack creates a new Django service stack with ECS Fargate and ALB
+// NewServiceStack creates a new API service stack with ECS Fargate and ALB
 func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackProps) *ServiceStackOutputs {
 	var sprops awscdk.StackProps
 	if props != nil {
@@ -49,9 +49,9 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 		ContainerInsightsV2: awsecs.ContainerInsights_ENHANCED,
 	})
 
-	// Create or reference ECR repository
-	repo := awsecr.NewRepository(stack, jsii.String("DjangoRepo"), &awsecr.RepositoryProps{
-		RepositoryName:     jsii.String("django-" + props.Environment),
+	// Create ECR repository
+	repo := awsecr.NewRepository(stack, jsii.String("ApiRepo"), &awsecr.RepositoryProps{
+		RepositoryName:     jsii.String("api-" + props.Environment),
 		ImageScanOnPush:    jsii.Bool(true),
 		ImageTagMutability: awsecr.TagMutability_MUTABLE,
 		LifecycleRules: &[]*awsecr.LifecycleRule{
@@ -66,7 +66,7 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 	// Using nginx placeholder image for infrastructure testing
 	// Replace with ECR image when deploying actual application:
 	//   Image: awsecs.ContainerImage_FromEcrRepository(repo, jsii.String("latest")),
-	service := awsecspatterns.NewApplicationLoadBalancedFargateService(stack, jsii.String("DjangoService"),
+	service := awsecspatterns.NewApplicationLoadBalancedFargateService(stack, jsii.String("ApiService"),
 		&awsecspatterns.ApplicationLoadBalancedFargateServiceProps{
 			Cluster:        ecsCluster,
 			Cpu:            jsii.Number(props.Config.CPU),
@@ -92,7 +92,7 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 	)
 
 	// Configure health check
-	// Using "/" for nginx placeholder; change to "/health/" for Django
+	// Using "/" for nginx placeholder; change to "/health/" for your app
 	service.TargetGroup().ConfigureHealthCheck(&awselasticloadbalancingv2.HealthCheck{
 		Path:                    jsii.String("/"),
 		Interval:                awscdk.Duration_Seconds(jsii.Number(30)),

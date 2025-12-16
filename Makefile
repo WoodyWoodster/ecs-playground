@@ -1,8 +1,12 @@
-.PHONY: build synth list deploy-% destroy-% deploy-all destroy-all
+.PHONY: build synth list bootstrap deploy-% destroy-% deploy-all destroy-all
 
 # Build Go CDK
 build:
 	cd infra && go build .
+
+# Bootstrap CDK (run once per account/region)
+bootstrap:
+	cd infra && bunx cdk bootstrap
 
 # Synthesize CloudFormation templates
 synth:
