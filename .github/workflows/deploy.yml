@@ -1,0 +1,97 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - production
+          - sandbox
+          - demo
+          - uat
+      stack:
+        description: 'Stack to deploy (leave blank for all app stacks)'
+        required: false
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  # Determine which environments to deploy based on trigger
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.set-envs.outputs.environments }}
+    steps:
+      - name: Set environments
+        id: set-envs
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environments=[\"${{ inputs.environment }}\"]" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environments=[\"production\", \"sandbox\", \"demo\"]" >> $GITHUB_OUTPUT
+          else
+            echo "environments=[\"uat\"]" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup.outputs.environments) }}
+      fail-fast: false
+
+    environment: ${{ matrix.environment }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: infra/go.sum
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install CDK dependencies
+        working-directory: infra
+        run: bun install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build Go
+        working-directory: infra
+        run: go build .
+
+      - name: CDK Diff
+        working-directory: infra
+        run: bunx cdk diff ${{ matrix.environment }}-app-*
+
+      - name: Deploy
+        working-directory: infra
+        run: |
+          if [ -n "${{ inputs.stack }}" ]; then
+            bunx cdk deploy ${{ inputs.stack }} --require-approval never
+          else
+            bunx cdk deploy ${{ matrix.environment }}-app-* --require-approval never
+          fi

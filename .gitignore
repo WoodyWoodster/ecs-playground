@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go
+infra/infra
+
+# CDK
+infra/cdk.out/
+infra/.cdk.staging/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

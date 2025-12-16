@@ -1,0 +1,90 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  AWS_REGION: us-east-1
+
+.go_setup: &go_setup
+  image: golang:1.21
+  before_script:
+    - curl -fsSL https://bun.sh/install | bash
+    - export PATH="$HOME/.bun/bin:$PATH"
+    - cd infra
+    - bun install
+    - go build .
+
+# Build job - runs on all branches
+build:
+  <<: *go_setup
+  stage: build
+  script:
+    - bunx cdk synth
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# UAT deployment - triggered by develop branch
+deploy:uat:
+  <<: *go_setup
+  stage: deploy
+  environment:
+    name: uat
+  script:
+    - bunx cdk deploy uat-app-* --require-approval never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# Production deployment - triggered by main branch
+deploy:production:
+  <<: *go_setup
+  stage: deploy
+  environment:
+    name: production
+  script:
+    - bunx cdk deploy production-app-* --require-approval never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Sandbox deployment - triggered by main branch
+deploy:sandbox:
+  <<: *go_setup
+  stage: deploy
+  environment:
+    name: sandbox
+  script:
+    - bunx cdk deploy sandbox-app-* --require-approval never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Demo deployment - triggered by main branch
+deploy:demo:
+  <<: *go_setup
+  stage: deploy
+  environment:
+    name: demo
+  script:
+    - bunx cdk deploy demo-app-* --require-approval never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Manual deployment - can deploy any environment/stack
+deploy:manual:
+  <<: *go_setup
+  stage: deploy
+  environment:
+    name: $ENVIRONMENT
+  script:
+    - |
+      if [ -n "$STACK" ]; then
+        bunx cdk deploy $STACK --require-approval never
+      else
+        bunx cdk deploy $ENVIRONMENT-app-* --require-approval never
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+  variables:
+    ENVIRONMENT: "uat"  # Default, override in GitLab UI
+    STACK: ""           # Optional, override in GitLab UI
