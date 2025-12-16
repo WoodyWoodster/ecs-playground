@@ -63,6 +63,9 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 	})
 
 	// Create the Fargate service with ALB
+	// Using nginx placeholder image for infrastructure testing
+	// Replace with ECR image when deploying actual application:
+	//   Image: awsecs.ContainerImage_FromEcrRepository(repo, jsii.String("latest")),
 	service := awsecspatterns.NewApplicationLoadBalancedFargateService(stack, jsii.String("DjangoService"),
 		&awsecspatterns.ApplicationLoadBalancedFargateServiceProps{
 			Cluster:        ecsCluster,
@@ -70,15 +73,8 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 			MemoryLimitMiB: jsii.Number(props.Config.Memory),
 			DesiredCount:   jsii.Number(props.Config.DesiredCount),
 			TaskImageOptions: &awsecspatterns.ApplicationLoadBalancedTaskImageOptions{
-				Image:         awsecs.ContainerImage_FromEcrRepository(repo, jsii.String("latest")),
-				ContainerPort: jsii.Number(8000),
-				Environment: &map[string]*string{
-					"DJANGO_SETTINGS_MODULE": jsii.String("config.settings.production"),
-					"ALLOWED_HOSTS":          jsii.String("*"),
-				},
-				Secrets: &map[string]awsecs.Secret{
-					"DATABASE_URL": awsecs.Secret_FromSecretsManager(props.DbSecret, nil),
-				},
+				Image:         awsecs.ContainerImage_FromRegistry(jsii.String("nginx:alpine"), nil),
+				ContainerPort: jsii.Number(80),
 			},
 			PublicLoadBalancer: jsii.Bool(true),
 			AssignPublicIp:     jsii.Bool(false), // Tasks in private subnets
@@ -96,8 +92,9 @@ func NewServiceStack(scope constructs.Construct, id string, props *ServiceStackP
 	)
 
 	// Configure health check
+	// Using "/" for nginx placeholder; change to "/health/" for Django
 	service.TargetGroup().ConfigureHealthCheck(&awselasticloadbalancingv2.HealthCheck{
-		Path:                    jsii.String("/health/"),
+		Path:                    jsii.String("/"),
 		Interval:                awscdk.Duration_Seconds(jsii.Number(30)),
 		Timeout:                 awscdk.Duration_Seconds(jsii.Number(5)),
 		HealthyThresholdCount:   jsii.Number(2),
