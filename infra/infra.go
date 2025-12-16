@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"infra/config"
 	djangoapi "infra/apps/django-api/stacks"
+	"infra/config"
 	shared "infra/shared/stacks"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
