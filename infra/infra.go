@@ -38,7 +38,7 @@ func main() {
 			Environment: envName,
 		})
 
-		// Shared Data stack (Aurora, S3)
+		// Shared Data stack (Aurora, S3) - depends on network
 		data := shared.NewDataStack(app, envName+"-shared-data", &shared.DataStackProps{
 			StackProps: awscdk.StackProps{
 				Env:         primaryEnv,
@@ -48,9 +48,10 @@ func main() {
 			Vpc:         network.Vpc,
 			Config:      cfg,
 		})
+		data.Stack.AddDependency(network.Stack, jsii.String("Data stack requires VPC from network stack"))
 
-		// API App stack (ECS, ALB)
-		api.NewServiceStack(app, envName+"-app-api", &api.ServiceStackProps{
+		// API App stack (ECS, ALB) - depends on network and data
+		apiStack := api.NewServiceStack(app, envName+"-app-api", &api.ServiceStackProps{
 			StackProps: awscdk.StackProps{
 				Env:         primaryEnv,
 				Description: jsii.String("API service for " + envName),
@@ -62,6 +63,7 @@ func main() {
 			DbSecret:    data.DbSecret,
 			Config:      cfg,
 		})
+		apiStack.Stack.AddDependency(data.Stack, jsii.String("API stack requires database and bucket from data stack"))
 	}
 
 	app.Synth(nil)
