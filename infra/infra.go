@@ -62,52 +62,6 @@ func main() {
 			DbSecret:    data.DbSecret,
 			Config:      cfg,
 		})
-
-		// DR stacks for environments with DR enabled
-		if cfg.EnableDR {
-			drEnv := &awscdk.Environment{
-				Account: jsii.String(account),
-				Region:  jsii.String(cfg.DRRegion),
-			}
-
-			// DR Shared Network stack
-			drNetwork := shared.NewNetworkStack(app, envName+"-dr-shared-network", &shared.NetworkStackProps{
-				StackProps: awscdk.StackProps{
-					Env:         drEnv,
-					Description: jsii.String("DR shared network infrastructure for " + envName),
-				},
-				Environment: envName + "-dr",
-			})
-
-			// DR Shared Data stack
-			drData := shared.NewDataStack(app, envName+"-dr-shared-data", &shared.DataStackProps{
-				StackProps: awscdk.StackProps{
-					Env:         drEnv,
-					Description: jsii.String("DR shared data infrastructure for " + envName),
-				},
-				Environment: envName + "-dr",
-				Vpc:         drNetwork.Vpc,
-				Config:      cfg,
-			})
-
-			// DR Django API App stack (warm standby - 1 minimal task)
-			drConfig := cfg
-			drConfig.DesiredCount = 1 // Warm standby
-			drConfig.MinCount = 1
-
-			djangoapi.NewServiceStack(app, envName+"-dr-app-django-api", &djangoapi.ServiceStackProps{
-				StackProps: awscdk.StackProps{
-					Env:         drEnv,
-					Description: jsii.String("DR Django API service for " + envName),
-				},
-				Environment: envName + "-dr",
-				Vpc:         drNetwork.Vpc,
-				Cluster:     drData.Cluster,
-				Bucket:      drData.Bucket,
-				DbSecret:    drData.DbSecret,
-				Config:      drConfig,
-			})
-		}
 	}
 
 	app.Synth(nil)
